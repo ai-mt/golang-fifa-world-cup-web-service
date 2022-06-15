@@ -1,47 +1,64 @@
 package handlers
 
 import (
-    "golang-fifa-world-cup-web-service/data"
-    "net/http"
+	"golang-fifa-world-cup-web-service/data"
+	"net/http"
 )
 
 // RootHandler returns an empty body status code
 func RootHandler(res http.ResponseWriter, req *http.Request) {
-    res.WriteHeader(http.StatusNoContent)
+	res.WriteHeader(http.StatusNoContent)
 }
 
 // ListWinners returns winners from the list
 func ListWinners(res http.ResponseWriter, req *http.Request) {
-    res.Header().Set("Content-Type", "application/json")
+	res.Header().Set("Content-Type", "application/json")
 
-    var year string
-    year = req.URL.Query().Get("year")
+	var year string
+	year = req.URL.Query().Get("year")
 
-    if year == "" {
-        var winners, err = data.ListAllJSON()
+	if year == "" {
+		var winners, err = data.ListAllJSON()
 
-        if err != nil {
-            res.WriteHeader(http.StatusInternalServerError)
-            return
-        }
+		if err != nil {
+			res.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
-        res.Write(winners)
-    } else {
-        var filteredWinners, err = data.ListAllByYear(year)
+		res.Write(winners)
+	} else {
+		var filteredWinners, err = data.ListAllByYear(year)
 
-        if err != nil {
-            res.WriteHeader(http.StatusBadRequest)
-            return
-        }
+		if err != nil {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
 
-        res.Write(filteredWinners)
+		res.Write(filteredWinners)
 
-    }
+	}
 
 }
 
 // AddNewWinner adds new winner to the list
 func AddNewWinner(res http.ResponseWriter, req *http.Request) {
+	var accessToken string
+	accessToken = req.Header.Get("X-ACCESS-TOKEN")
+
+	var isTokenValid bool
+	isTokenValid = data.IsAccessTokenValid(accessToken)
+
+	if !isTokenValid {
+		res.WriteHeader(http.StatusUnauthorized)
+	} else {
+		var err = data.AddNewWinner(req.Body)
+
+		if err != nil {
+			res.WriteHeader(http.StatusUnprocessableEntity)
+			return
+		}
+		res.WriteHeader(http.StatusCreated)
+	}
 
 }
 
